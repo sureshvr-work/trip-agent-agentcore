@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Trip Agent · AgentCore + Bedrock</title>
+<style>
+:root{color-scheme:light;--ink:#19303f;--muted:#5c6c74;--line:#d6dedb;--teal:#087368}*{box-sizing:border-box}body{margin:0;background:#f5f4ef;color:var(--ink);font:15px/1.6 system-ui,sans-serif}main{max-width:1130px;margin:auto;padding:36px 24px}header{border-bottom:1px solid var(--line);padding-bottom:23px;margin-bottom:25px}.eyebrow{color:var(--teal);text-transform:uppercase;letter-spacing:.12em;font-size:11px;font-weight:800}h1{font-size:34px;line-height:1.15;letter-spacing:-.035em;margin:8px 0 12px}h2{font-size:17px;margin:0 0 10px}p{margin:8px 0;color:var(--muted)}.route{font:12px ui-monospace,monospace;overflow-wrap:anywhere}.layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:25px}.panel{background:white;border:1px solid var(--line);border-radius:9px;padding:21px}label{font-weight:700;display:block;font-size:13px;margin-bottom:7px}textarea{width:100%;min-height:115px;resize:vertical;font:inherit;border:1px solid #b5c5bf;border-radius:5px;padding:12px;color:var(--ink)}button{font:700 13px system-ui,sans-serif;border:1px solid var(--teal);background:var(--teal);color:white;border-radius:5px;padding:11px 15px;cursor:pointer}button.secondary{background:white;color:var(--ink);border-color:#bdcbc6}button:disabled{opacity:.45;cursor:default}button:focus-visible,a:focus-visible,textarea:focus-visible{outline:3px solid #b87830;outline-offset:3px}.controls{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px}.status{font-size:12px;margin:15px 0 0;color:var(--teal)}.feed{margin-top:22px;display:grid;gap:12px}.event{border:1px solid var(--line);border-left:3px solid var(--teal);border-radius:5px;padding:13px 16px;background:white}.event.error{border-left-color:#a53e32}.event h3{font-size:12px;text-transform:uppercase;letter-spacing:.04em;margin:0 0 7px}.event pre{white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.6 ui-monospace,monospace;margin:0;max-height:330px;overflow:auto}.plan{white-space:pre-wrap;font-size:14px}.session-info{font-size:12px}.session-info dt{font-weight:750;margin-top:14px}.session-info dd{margin:4px 0 0;color:var(--muted);overflow-wrap:anywhere;font-family:ui-monospace,monospace;font-size:11px}.note{border-top:1px solid var(--line);padding-top:15px;margin-top:20px;font-size:12px}.note strong{color:var(--ink)}a{color:var(--teal)}.runtime-info{margin-top:18px;font-size:11px;color:var(--muted);overflow-wrap:anywhere}aside{align-self:start;position:sticky;top:20px}@media(max-width:760px){.layout{grid-template-columns:1fr}aside{position:static}main{padding:23px 16px}h1{font-size:28px}}
+</style>
+</head>
+<body><main>
+<header><div class="eyebrow">AWS AgentCore Runtime · Amazon Bedrock</div><h1>The same agent loop.<br>A session-isolated runtime.</h1><p>Your local browser sends requests through an AWS-authenticated bridge. The agent and travel tools execute in AgentCore; Amazon Bedrock supplies the model.</p><div class="route">Browser → local bridge → AgentCore session → Bedrock / travel APIs</div><p style="font-size:12px;margin-top:14px"><a href="/code-flow">Explore the code flow →</a></p></header>
+<div class="layout"><section><div class="panel"><form id="form"><label for="goal">What trip should the agent plan?</label><textarea id="goal" required maxlength="10000">Plan a short visit to Albany, New York. Check the weather and suggest a few sights.</textarea><div class="controls"><button id="run" disabled>Plan with Bedrock</button><button type="button" class="secondary" id="new">New session</button><button type="button" class="secondary" id="stop" disabled>Stop session compute</button></div></form><p class="status" id="status" role="status">Loading deployment configuration…</p></div><div class="feed" id="feed" aria-label="Agent events"></div></section>
+<aside class="panel"><h2>Session identity</h2><dl class="session-info"><dt>Runtime session ID</dt><dd id="session"></dd><dt>Execution instance ID</dt><dd id="instance">Shown after the agent starts.</dd><dt>Latest trace ID</dt><dd id="trace">Shown after the agent starts.</dd><dt>Model</dt><dd id="model"></dd><dt>Region</dt><dd id="region"></dd></dl><p class="note"><strong>Try it:</strong> run another goal in this session, then create a new session. While the original environment is alive, its instance ID should stay the same. A new session receives a different execution environment.</p><p class="note">The ID is an application-generated process marker, not an AWS microVM identifier. Each Plan starts a fresh planning transcript; this wrapper does not add conversation memory.</p><div class="runtime-info" id="arn"></div></aside></div>
+</main><script>
+const $=id=>document.getElementById(id);
+let sessionId=crypto.randomUUID(),busy=false,hasSession=false,configured=false;
+function updateControls(){ $('run').disabled=busy||!configured;$('new').disabled=busy;$('stop').disabled=busy||!hasSession; }
+function newSession(){sessionId=crypto.randomUUID();$('session').textContent=sessionId;$('instance').textContent='Shown after the agent starts.';$('trace').textContent='Shown after the agent starts.';hasSession=false;updateControls();}
+function showEvent(event){
+ if(event.type==='runtime'){$('instance').textContent=event.instance_id;$('trace').textContent=event.trace_id||'This session uses an older runtime. Create a new session.';$('model').textContent=event.model_id;hasSession=true;updateControls();return;}
+ const card=document.createElement('article');card.className='event'+(event.type==='error'||event.ok===false?' error':'');
+ const title=document.createElement('h3');title.textContent=event.type==='reason'?`Turn ${event.turn} · Bedrock${event.tool?' → '+event.tool.name:''}`:event.type==='tool_result'?`${event.name} · ${event.ok?'success':'error'} · ${event.latency_ms} ms`:event.type;
+ const content=document.createElement(event.type==='final'?'div':'pre');
+ if(event.type==='final'){content.className='plan';content.textContent=event.text;}
+ else if(event.type==='reason'){content.textContent=event.thought||'Model selected the next action.';}
+ else if(event.type==='tool_result'){content.textContent=JSON.stringify(event.result,null,2);}
+ else if(event.type==='error'){content.textContent=event.message;}
+ else content.textContent=event.goal||JSON.stringify(event);
+ card.append(title,content);$('feed').append(card);
+}
+$('form').addEventListener('submit',async event=>{
+ event.preventDefault();if(busy)return;busy=true;updateControls();$('feed').replaceChildren();$('status').textContent='Invoking the AgentCore session…';let finished=false,failed=false;
+ try{
+  const response=await fetch('/run',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({goal:$('goal').value.trim(),session_id:sessionId})});
+  if(!response.ok)throw Error(`Bridge returned HTTP ${response.status}`);
+  const reader=response.body.getReader(),decoder=new TextDecoder();let buffer='';
+  while(true){const {done,value}=await reader.read();buffer+=done?decoder.decode():decoder.decode(value,{stream:true});buffer=buffer.replace(/\r\n/g,'\n');let boundary;
+   while((boundary=buffer.indexOf('\n\n'))!==-1){const frame=buffer.slice(0,boundary);buffer=buffer.slice(boundary+2);const data=frame.split('\n').filter(line=>line.startsWith('data:')).map(line=>line.slice(5).trimStart()).join('\n');if(!data)continue;const item=JSON.parse(data);showEvent(item);if(item.type==='final')finished=true;if(item.type==='error')failed=true;}
+   if(done)break;
+  }
+  $('status').textContent=failed?'The agent reported an error. See the event above.':finished?'Plan complete. Session compute remains available until stopped or idle timeout.':'Stream ended without a final plan.';
+ }catch(error){$('status').textContent=error.message;}finally{busy=false;updateControls();}
+});
+$('new').onclick=()=>{newSession();$('status').textContent='New session selected. Previous sessions end after idle timeout or can be stopped by ID with the client.';};
+$('stop').onclick=async()=>{busy=true;updateControls();try{const response=await fetch('/session/stop',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:sessionId})});if(!response.ok)throw Error('Could not stop session. Check AWS login.');hasSession=false;$('instance').textContent='Compute stopped; next invocation starts fresh.';$('status').textContent='Session compute stopped.';}catch(error){$('status').textContent=error.message;}finally{busy=false;updateControls();}};
+newSession();
+fetch('/config').then(async response=>{if(!response.ok)throw Error('No deployment state found. Run the deployment script first.');return response.json();}).then(config=>{$('model').textContent=config.model_id;$('region').textContent=config.region;$('arn').textContent=config.runtime_arn;configured=true;updateControls();$('status').textContent='Ready. Model calls execute in Amazon Bedrock.';}).catch(error=>{$('status').textContent=error.message;});
+</script></body></html>

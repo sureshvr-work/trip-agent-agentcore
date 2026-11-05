@@ -1,0 +1,31 @@
+# Local credentials and account-specific settings
+.env
+.env.*
+!.env.example
+**/settings.json
+.aws/
+**/credentials
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Deployment state, logs, generated traces and reports
+.state/
+*.log
+traces/
+reports/
+
+# Python and editor artifacts
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.DS_Store
+.idea/
+.vscode/

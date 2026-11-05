@@ -1,0 +1,17 @@
+**
+!backend/
+!backend/**
+!agentcore/
+!agentcore/requirements.txt
+!agentcore/entrypoint.py
+!agentcore/bootstrap.py
+!agentcore/bedrock_provider.py
+!agentcore/runtime_logging.py
+!agentcore/telemetry.py
+!agentcore/Dockerfile
+!agentcore/Dockerfile.dockerignore
+**/.env
+**/.env.*
+**/.venv/
+**/__pycache__/
+**/*.pyc

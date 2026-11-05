@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Follow a Trip Agent request from the local UI to AWS AgentCore, Amazon Bedrock, Python tools, and CloudWatch traces.">
+<title>Trip Agent · From Plan to response</title>
+<style>
+:root{color-scheme:light;--paper:#f5f4ef;--white:#fff;--ink:#19303f;--muted:#566970;--line:#d2ddd8;--teal:#087368;--soft:#eaf3ee;--navy:#173747;--amber:#925b1d;--sand:#fff4df}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:24px}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.65 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}a{color:var(--teal);text-underline-offset:3px}button{font:inherit;cursor:pointer}button:disabled{cursor:default;opacity:.45}button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid #b97625;outline-offset:4px}p,h1,h2,h3{margin-top:0}h1,h2,h3{line-height:1.2}code,pre{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}code{font-size:.84em;overflow-wrap:anywhere}pre{font-size:12px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere;margin:0}.wrap{max-width:1240px;margin:auto;padding:0 28px}.top{border-bottom:1px solid var(--line)}.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:20px;min-height:72px}.brand{font-size:19px;font-weight:800;letter-spacing:-.035em;text-decoration:none;color:var(--ink)}.brand span{color:var(--teal)}.top a:last-child{font-size:12px;font-weight:700}header{padding:48px 0 30px}.eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:.15em;font-weight:800;color:var(--teal);margin-bottom:12px}h1{font-size:clamp(32px,4vw,48px);letter-spacing:-.045em;max-width:800px;margin-bottom:17px}.intro{max-width:780px;font-size:18px;line-height:1.6;color:var(--muted);margin-bottom:25px}.principle{max-width:900px;border-left:3px solid var(--teal);padding:12px 18px;background:var(--soft);font-size:14px}.principle p{margin:0}.config{display:flex;flex-wrap:wrap;gap:10px 25px;margin-top:23px;font-size:11px;color:var(--muted)}.config strong{color:var(--ink);font-weight:700}.nav{display:flex;gap:28px;flex-wrap:wrap;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:16px 0}.nav a{text-decoration:none;font-size:12px;font-weight:750}.nav span{color:var(--muted);font-size:10px;margin-right:7px}section{padding-top:38px}.section-head{display:flex;justify-content:space-between;gap:20px;align-items:start;margin-bottom:20px}.section-head h2{font-size:25px;letter-spacing:-.035em;margin:0 0 9px}.section-head p{font-size:13px;color:var(--muted);max-width:700px;margin:0}.section-number{color:var(--teal);font:12px ui-monospace,monospace;padding-top:5px}.workspace{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:24px;align-items:start}.workspace>*{min-width:0}.diagram{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--white)}.diagram-caption{padding:17px 21px;border-bottom:1px solid var(--line);font-size:11px;color:var(--muted)}.diagram-body{padding:23px}.boundary-label{display:flex;justify-content:space-between;gap:15px;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px}.boundary-label small{font-size:10px;letter-spacing:0;font-weight:500;text-transform:none;color:var(--muted)}.local-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.node{position:relative;display:block;width:100%;border:1px solid #bfcfc8;background:white;border-radius:6px;color:var(--ink);text-align:left;padding:12px 13px;transition:background .15s,border-color .15s}.node:hover{background:#f3f8f5;border-color:var(--teal)}.node[aria-pressed="true"]{border-color:var(--teal);outline:2px solid var(--teal);outline-offset:2px;background:var(--soft)}.node .num{font:10px ui-monospace,monospace;color:var(--teal);display:block;margin-bottom:5px}.node strong{display:block;font-size:12px;line-height:1.4}.node small{display:block;font-size:10px;color:var(--muted);margin-top:4px;line-height:1.5}.node code{font-size:10px}.arrow{text-align:center;margin:9px 0;color:var(--teal);font-size:19px;line-height:1.4}.arrow span{font-size:10px;color:var(--muted);margin-left:7px;vertical-align:middle}.aws{border:1px solid #b6c9c0;background:#f5f9f6;border-radius:8px;padding:17px}.runtime{background:var(--navy);color:white;border-color:var(--navy)}.runtime .num,.runtime small{color:#c6e3d9}.runtime:hover,.runtime[aria-pressed="true"]{background:#244c5c;color:white}.pair{display:grid;grid-template-columns:1fr 1fr;gap:12px}.loop{border:1px dashed #8baea0;border-radius:7px;padding:14px;margin-top:14px;background:white}.loop-title{display:flex;justify-content:space-between;gap:14px;margin-bottom:11px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--teal)}.loop-title span{font-weight:500;color:var(--muted);letter-spacing:0;text-transform:none}.loop .node{background:#fafcfb}.loop .node[aria-pressed="true"]{background:var(--soft)}.decision{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0;font-size:10px;color:var(--muted)}.decision span:last-child{text-align:right}.repeat{font-size:10px;padding:9px 0 4px;color:var(--teal);font-weight:700;text-align:center}.loop-end{margin-top:12px}.stream-note{font-size:11px;color:var(--muted);margin:13px 0 0}.inspector{position:sticky;top:24px;border:1px solid var(--line);background:var(--white);border-radius:10px;overflow:hidden}.inspect-top{background:var(--navy);color:white;padding:22px}.inspect-top .eyebrow{color:#c9e7da;font-size:9px;margin-bottom:9px}.inspect-top h3{font-size:23px;letter-spacing:-.03em;margin:0 0 12px}.inspect-top p{font-size:12px;color:#d0e1e2;margin:0}.inspect-body{padding:20px}.inspect-body dl{margin:0}.inspect-body dt{font-size:9px;letter-spacing:.08em;text-transform:uppercase;font-weight:800;color:var(--teal);margin:16px 0 4px}.inspect-body dt:first-child{margin-top:0}.inspect-body dd{margin:0;font-size:12px;overflow-wrap:anywhere}.inspect-code{background:#f1f4f2;padding:13px;margin-top:18px;border-radius:4px}.inspect-code code{font-size:11px}.controls{display:flex;gap:9px;margin-top:19px}.controls button,.outline-button{font-size:12px;font-weight:700;border:1px solid #aebfb7;border-radius:4px;padding:9px 13px;background:white;color:var(--ink)}.controls button:last-child{background:var(--teal);border-color:var(--teal);color:white}.progress{font-size:10px;color:var(--muted);margin:12px 0 0}.aside-note{font-size:11px;color:var(--muted);padding:16px 20px;border-top:1px solid var(--line);margin:0}.console{margin-top:18px;padding:16px 19px;border-left:3px solid var(--amber);background:var(--sand);font-size:12px}.console strong{color:var(--amber)}.console p{margin:3px 0 0}.files{display:grid;grid-template-columns:1fr 1fr;gap:26px}.file-group h3{font-size:13px;margin:0 0 13px}.file-row{display:grid;grid-template-columns:145px minmax(0,1fr);gap:12px;border-top:1px solid var(--line);padding:12px 0;font-size:12px}.file-row p{color:var(--muted);margin:0;font-size:12px}.file-row code{font-size:11px}.session{display:grid;grid-template-columns:1fr 1fr 1fr;gap:22px;margin-top:30px;padding:24px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}.session h3{font-size:13px;margin:0 0 8px}.session p{font-size:12px;color:var(--muted);margin:0}.dual{display:grid;grid-template-columns:1fr 1fr;gap:26px}.dual h3{font-size:17px;letter-spacing:-.02em;margin-bottom:13px}.pipeline{padding:20px;background:var(--white);border:1px solid var(--line);border-radius:7px}.pipeline .item{font-size:12px;line-height:1.6}.pipeline .item strong{display:block}.pipeline .item span{color:var(--muted);font-size:11px}.pipeline .down{font-size:17px;color:var(--teal);margin:7px 0}.pipeline p{font-size:11px;color:var(--muted);margin:15px 0 0;border-top:1px solid var(--line);padding-top:12px}.trace-tree{background:var(--navy);color:#e0f0e7;border-radius:7px;padding:22px}.trace-tree pre{font-size:12px;line-height:1.9}.trace-tree .eyebrow{color:#b8dccd;font-size:9px}.trace-note{font-size:12px;color:var(--muted);margin:15px 0}.log-path{padding:14px 16px;background:var(--white);border:1px solid var(--line);border-radius:5px;font-size:11px;overflow-wrap:anywhere}.log-path strong{display:block;font-size:10px;margin-bottom:7px;color:var(--teal)}.logs-key{font-size:11px;color:var(--muted);padding-left:17px;margin:12px 0}.logs-key li{margin:5px 0}.details{margin-top:26px;border-top:1px solid var(--line)}details{border-bottom:1px solid var(--line);padding:15px 0}summary{font-size:13px;font-weight:700;cursor:pointer}details p{font-size:12px;color:var(--muted);max-width:830px;margin:13px 0 2px}footer{margin-top:38px;border-top:1px solid var(--line);padding:23px 0 35px;display:flex;justify-content:space-between;gap:20px;font-size:10px;color:var(--muted)}footer p{margin:0;max-width:680px}[hidden]{display:none!important}.skip{position:absolute;left:20px;top:-80px;background:white;padding:12px;z-index:10}.skip:focus{top:10px}
+@media(max-width:1000px){.workspace{grid-template-columns:minmax(0,1fr) 300px}.local-grid{grid-template-columns:1fr}.node .num{display:inline-block;margin:0 7px 0 0}.node strong{display:inline}.node small{margin-top:4px}.file-row{grid-template-columns:125px minmax(0,1fr)}}
+@media(max-width:760px){.wrap{padding:0 18px}header{padding-top:30px}.top .wrap{min-height:62px}.intro{font-size:16px}.workspace{grid-template-columns:1fr}.inspector{position:static}.diagram-body{padding:16px}.local-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.node .num{display:block;margin:0 0 5px}.node strong{display:block}.pair{grid-template-columns:1fr}.files,.dual{grid-template-columns:1fr}.session{grid-template-columns:1fr;gap:19px}.file-row{grid-template-columns:135px minmax(0,1fr)}.section-head{gap:12px}.section-head h2{font-size:22px}.nav{gap:16px}.nav a{font-size:11px}.config{gap:8px 18px}.loop-title{display:block}.loop-title span{display:block;margin-top:3px}footer{display:block}footer p{margin-bottom:10px}}
+@media(max-width:420px){.local-grid{grid-template-columns:1fr}.boundary-label{display:block}.boundary-label small{display:block;margin-top:3px}.decision{font-size:9px}.file-row{grid-template-columns:1fr;gap:4px}.diagram-body{padding:13px}.aws{padding:12px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.node{transition:none}}
+@media print{body{background:white;font-size:11px}.wrap{max-width:none}.top,.nav,.controls,.skip{display:none}.workspace{display:block}.inspector{position:static;margin-top:20px}.files,.dual{grid-template-columns:1fr 1fr}.node{break-inside:avoid}.session{break-inside:avoid}header{padding-top:10px}a{color:inherit}.diagram{break-inside:auto}}
+</style>
+</head>
+<body>
+<a class="skip" href="#request">Skip to code flow</a>
+<div class="top"><div class="wrap"><a class="brand" href="#top">Trip Agent<span> / code flow</span></a><a id="demo-link" href="ui.html">Open the trip demo →</a></div></div>
+<main class="wrap" id="top">
+<header>
+<div class="eyebrow">A guide to your Python agent on AWS</div>
+<h1>What happens after<br>you click Plan?</h1>
+<p class="intro">Follow the code from your browser to an AgentCore session, through Bedrock’s decisions and Python tools, and back to a streamed response.</p>
+<div class="principle"><p><strong>AgentCore hosts the code. Bedrock supplies the model’s decisions.</strong> Your existing Python loop controls when to call the model, execute a tool, and return an answer.</p></div>
+<div class="config"><span>Runtime <strong>trip_agent_bedrock_demo</strong></span><span>Region <strong>us-east-2 · Ohio</strong></span><span>Model <strong>Amazon Nova 2 Lite</strong></span></div>
+</header>
+<nav class="nav" aria-label="Page sections"><a href="#request"><span>01</span>Follow a request</a><a href="#files"><span>02</span>Files &amp; sessions</a><a href="#operations"><span>03</span>Deploy, log &amp; trace</a></nav>
+
+<section id="request" aria-labelledby="request-title">
+<div class="section-head"><div><h2 id="request-title">One request, across two places.</h2><p>Select a numbered step to see the file, function, inputs, and outputs. The diagram illustrates one tool cycle; real requests can repeat the model and tool steps.</p></div><span class="section-number">01 / REQUEST</span></div>
+<div class="workspace">
+<div>
+<div class="diagram">
+<div class="diagram-caption">Code execution flow · service calls are shown inline · this walkthrough does not invoke AWS</div>
+<div class="diagram-body">
+<div class="boundary-label">Your machine <small>Browser + local Python bridge</small></div>
+<div class="local-grid">
+<button class="node" data-step="0" aria-pressed="true"><span class="num">01</span><strong>User clicks Plan</strong><small><code>ui.html</code><br>Goal + session ID</small></button>
+<button class="node" data-step="1" aria-pressed="false"><span class="num">02</span><strong>Accept the request</strong><small><code>serve.py</code><br><code>POST /run</code></small></button>
+<button class="node" data-step="2" aria-pressed="false"><span class="num">03</span><strong>Sign the AWS call</strong><small><code>client.py</code><br><code>invoke_events()</code></small></button>
+</div>
+<div class="arrow" aria-hidden="true">↓ <span>IAM-authenticated InvokeAgentRuntime request</span></div>
+<div class="aws">
+<div class="boundary-label">AWS · AgentCore Runtime <small>Session execution environment</small></div>
+<button class="node runtime" data-step="3" aria-pressed="false"><span class="num">04</span><strong>Route to the runtime session</strong><small>AgentCore receives the session ID and runs the deployed container.</small></button>
+<div class="arrow" aria-hidden="true">↓</div>
+<div class="pair">
+<button class="node" data-step="4" aria-pressed="false"><span class="num">05</span><strong>Enter the Python agent</strong><small><code>entrypoint.py → invoke()</code><br>Validate input; start the agent trace</small></button>
+<button class="node" data-step="5" aria-pressed="false"><span class="num">06</span><strong>Initialize the environment</strong><small><code>bootstrap.py → prepare()</code><br>Load tool keys and create the provider</small></button>
+</div>
+<div class="loop">
+<div class="loop-title">Your existing agent loop <span>Reason → act → update history → repeat</span></div>
+<button class="node" data-step="6" aria-pressed="false"><span class="num">07</span><strong>Start a fresh transcript</strong><small><code>backend/loop.py → run()</code><br>System instructions + this request’s goal</small></button>
+<div class="arrow" aria-hidden="true">↓</div>
+<button class="node" data-step="7" aria-pressed="false"><span class="num">08</span><strong>Ask Bedrock for the next action</strong><small><code>bedrock_provider.py → reason()</code><br>Converse API → Nova model → tool request or final answer</small></button>
+<div class="decision"><span>Tool requested? Follow 09 → 10 ↓</span><span>Final answer? Go to 11 ↓</span></div>
+<div class="pair">
+<button class="node" data-step="8" aria-pressed="false"><span class="num">09</span><strong>Execute the Python tool</strong><small><code>backend/tools/registry.py → call()</code><br>Validate arguments; call the travel API</small></button>
+<button class="node" data-step="9" aria-pressed="false"><span class="num">10</span><strong>Add the tool result</strong><small><code>backend/loop.py</code><br>Append the result or error to history</small></button>
+</div>
+<div class="repeat">After 10: return to 08 with the updated history ↶</div>
+<button class="node loop-end" data-step="10" aria-pressed="false"><span class="num">11</span><strong>Emit the final answer</strong><small><code>backend/loop.py → entrypoint.py</code><br>When the model stops requesting tools, finish the plan.</small></button>
+</div>
+<p class="stream-note"><strong>Along the way:</strong> runtime metadata, model steps, tool results, errors, and the final answer are streamed as events.</p>
+</div>
+<div class="arrow" aria-hidden="true">↓ <span>Server-sent events (SSE) back through the signed connection</span></div>
+<button class="node" data-step="11" aria-pressed="false"><span class="num">12</span><strong>Your browser renders the events</strong><small><code>client.py → serve.py → ui.html</code><br>Show the model’s steps, tool results, final plan, and trace ID.</small></button>
+</div>
+</div>
+<div class="console"><strong>Testing directly in the AWS console?</strong><p>The console calls the runtime directly, beginning at step 04. It bypasses <code>ui.html</code>, <code>serve.py</code>, and <code>client.py</code>. Testing only a model in the Bedrock playground does not run this Python agent.</p></div>
+</div>
+<aside class="inspector" aria-label="Selected code step">
+<div class="inspect-top"><div class="eyebrow" id="step-place">Step 01 · Your machine</div><h3 id="step-title">Describe the trip.</h3><p id="step-description">The browser collects the goal and sends it with a runtime session ID.</p></div>
+<div class="inspect-body">
+<dl><dt>File / function</dt><dd id="step-file"><code>agentcore/ui.html · form submit handler</code></dd><dt>Receives</dt><dd id="step-input">The goal typed into the page.</dd><dt>Produces</dt><dd id="step-output">A POST request to /run containing goal and session_id.</dd><dt>Why it matters</dt><dd id="step-why">The browser sends the request to the local bridge. AWS credentials stay on the server side.</dd></dl>
+<div class="inspect-code"><pre><code id="step-code">fetch('/run', {
+  method: 'POST',
+  body: JSON.stringify({goal, session_id})
+})</code></pre></div>
+<div class="controls"><button id="previous" type="button" disabled>← Previous</button><button id="next" type="button">Next step →</button></div>
+<p class="progress" id="progress" role="status" aria-live="polite">Step 1 of 12 · User clicks Plan</p>
+</div>
+<p class="aside-note">Code snippets are simplified explanations of this project. They are not commands to execute.</p>
+</aside>
+</div>
+</section>
+
+<section id="files" aria-labelledby="files-title">
+<div class="section-head"><div><h2 id="files-title">Which file owns which job?</h2><p>The wrapper adapts your existing backend for AgentCore. The agent loop and Python travel tools are shared with the original application.</p></div><span class="section-number">02 / CODE</span></div>
+<div class="files">
+<div class="file-group"><h3>Local UI and AWS invocation</h3>
+<div class="file-row"><code>ui.html</code><p>Collects the goal, chooses a session ID, and renders incoming events.</p></div>
+<div class="file-row"><code>serve.py</code><p>Serves the page and bridges browser requests to the AWS client on port 8001.</p></div>
+<div class="file-row"><code>client.py</code><p>Signs runtime requests using boto3, parses the SSE response, and can stop a session.</p></div>
+<div class="file-row"><code>invoke.py</code><p>CLI entry point using the same signed client, without the browser.</p></div>
+</div>
+<div class="file-group"><h3>Agent execution inside AWS</h3>
+<div class="file-row"><code>entrypoint.py</code><p>The AgentCore SDK entry point. Validates input and yields safe response events.</p></div>
+<div class="file-row"><code>bootstrap.py</code><p>Loads tool credentials once per execution environment, then initializes the shared loop and provider.</p></div>
+<div class="file-row"><code>bedrock_provider.py</code><p>Translates history, tool schemas, and Bedrock responses to the loop’s existing Decision / ToolCall contract.</p></div>
+<div class="file-row"><code>backend/loop.py</code><p>Owns the reason → tool → history loop. <code>backend/tools/</code> contains the actual tool functions.</p></div>
+</div>
+</div>
+<div class="session">
+<div><h3>Same session ≠ conversation memory.</h3><p>A live session can reuse the initialized process and provider, but every Plan creates a fresh transcript in <code>loop.run()</code>. This wrapper adds no durable conversation memory.</p></div>
+<div><h3>Credentials have two jobs.</h3><p>Your local AWS login authenticates runtime invocation. The runtime’s IAM role authorizes Bedrock and Secrets Manager. Travel API keys come from Secrets Manager; this version needs no OpenAI key.</p></div>
+<div><h3>A new session gets fresh initialization.</h3><p>The UI generates a new session ID. Initialization runs in its execution environment. Configured idle timeout: 5 minutes; maximum compute lifetime: 30 minutes. Neither value represents chat history retention.</p></div>
+</div>
+</section>
+
+<section id="operations" aria-labelledby="operations-title">
+<div class="section-head"><div><h2 id="operations-title">Deploy once. Invoke many times. Trace each request.</h2><p>Building the container and configuring AWS happen during deployment. Clicking Plan invokes the existing runtime.</p></div><span class="section-number">03 / OPERATE</span></div>
+<div class="dual">
+<div><h3>The deployment path</h3><div class="pipeline">
+<div class="item"><strong><code>settings.json → deploy.py --apply</code></strong><span>Check account and model; generate scoped IAM policies.</span></div><div class="down" aria-hidden="true">↓</div>
+<div class="item"><strong><code>Dockerfile + backend/ + wrapper</code></strong><span>Build a linux/arm64 image. No .env or API key values are packaged.</span></div><div class="down" aria-hidden="true">↓</div>
+<div class="item"><strong>Amazon ECR · <code>trip-agent-agentcore</code></strong><span>Store the container image with a unique immutable tag.</span></div><div class="down" aria-hidden="true">↓</div>
+<div class="item"><strong>AgentCore runtime + execution role</strong><span>Configure the image, IAM role, model ID, secret reference, timeouts, and trace export.</span></div><div class="down" aria-hidden="true">↓</div>
+<div class="item"><strong><code>.state/deployment.json</code></strong><span>Save the runtime ARN and region for the local client. Wait for READY before testing.</span></div>
+<p>The original ECS/ALB deployment is separate. This AgentCore invocation path does not go through that load balancer or ECS service.</p>
+</div></div>
+<div><h3>The tracing path</h3>
+<div class="trace-tree"><div class="eyebrow">Illustrative trace · one tool cycle</div><pre>POST /invocations
+└─ invoke_agent trip_agent_bedrock_demo
+   ├─ chat Nova model
+   ├─ execute_tool geocode_place
+   └─ chat Nova model → final answer</pre></div>
+<p class="trace-note"><code>telemetry.py</code> creates the agent and tool spans. <code>bedrock_provider.py</code> wraps model calls. AWS OpenTelemetry exports them to CloudWatch, linked by trace and session IDs.</p>
+<div class="log-path"><strong>CloudWatch log group · us-east-2</strong><code>/aws/bedrock-agentcore/runtimes/trip_agent_bedrock_demo-Huy65GFubx-DEFAULT</code></div>
+<ul class="logs-key"><li><code>spans</code> — agent, model, tool, and HTTP spans.</li><li><code>otel-rt-logs</code> — structured OpenTelemetry logs.</li><li><code>runtime-logs-&lt;session-id&gt;</code> — process output and application logs.</li></ul>
+<p class="trace-note">Open AgentCore Observability, select the agent, and inspect Sessions or Traces. The local UI shows the latest trace ID. Custom spans include timing, token counts, and tool status; prompt bodies and tool payloads are excluded.</p>
+</div>
+</div>
+<div class="details">
+<details><summary>What happens when a travel tool fails?</summary><p>The loop turns a tool failure into a result in the transcript. The next model call sees that failure and can change tools or arguments. Model-call failures emit an error event and end that run. Reaching the turn limit returns a partial-plan message.</p></details>
+<details><summary>Where do the external calls execute?</summary><p>The model adapter and tool functions execute inside the AgentCore session environment. The adapter calls the separate Amazon Bedrock service; travel tools call external APIs such as Geoapify, Open-Meteo, Tavily, and AviationStack. The selected US inference profile can route model calls across its supported US regions.</p></details>
+<details><summary>What does the execution instance ID prove?</summary><p>It is an application-generated process marker created during initialization. It helps demonstrate process reuse while a session environment is alive. It is not an AWS microVM identifier, and this code does not manage a fleet of EC2 machines itself.</p></details>
+</div>
+</section>
+<footer><p>Based on the project’s AgentCore wrapper and settings. This is an explanatory page, not a live AWS status dashboard. It performs no model calls and reads no credentials.</p><a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/observability-view.html" target="_blank" rel="noopener noreferrer">AWS observability guide ↗</a></footer>
+</main>
+<script>
+'use strict';
+const steps = [
+ {place:'Your machine',title:'Describe the trip.',description:'The browser collects the goal and sends it with a runtime session ID.',file:'agentcore/ui.html · form submit handler',input:'The goal typed into the page.',output:'A POST request to /run containing goal and session_id.',why:'The browser sends the request to the local bridge. AWS credentials stay on the server side.',code:"fetch('/run', {\n  method: 'POST',\n  body: JSON.stringify({goal, session_id})\n})"},
+ {place:'Your machine',title:'Bridge the browser to AWS.',description:'FastAPI validates the goal and session ID, then opens a streaming response.',file:'agentcore/serve.py · run()',input:'JSON containing a goal and a session_id.',output:'Events yielded by client.invoke_events(), forwarded as SSE.',why:'This server can use your AWS login without giving credentials to browser JavaScript. It binds to 127.0.0.1:8001.',code:"@app.post('/run')\ndef run(body, request):\n  events = invoke_events(body.goal, body.session_id)\n  return StreamingResponse(events, ...)"},
+ {place:'Your machine',title:'Make the signed runtime call.',description:'The boto3 client addresses the deployed AgentCore runtime and signs the API request.',file:'agentcore/client.py · invoke_events()',input:'Goal, session ID, and the saved runtime ARN / region.',output:'An InvokeAgentRuntime request to the DEFAULT endpoint.',why:'The runtime ARN comes from .state/deployment.json. IAM authentication comes from your local AWS credential chain.',code:"client.invoke_agent_runtime(\n  agentRuntimeArn=state['runtime_arn'],\n  runtimeSessionId=session_id,\n  qualifier='DEFAULT',\n  payload=json.dumps({'goal': goal})\n)"},
+ {place:'AWS managed hosting',title:'Find the session environment.',description:'AgentCore authenticates the request and routes it to the session execution environment.',file:'AgentCore Runtime · deployed container',input:'A signed API request and runtime session ID.',output:'An HTTP invocation of the SDK endpoint /invocations.',why:'AgentCore manages the execution environment. Reusing a live session ID can reuse its environment; a new session is isolated.',code:'InvokeAgentRuntime\n  → runtime / DEFAULT endpoint\n    → session environment\n      → HTTP /invocations'},
+ {place:'Inside the runtime',title:'Enter your Python wrapper.',description:'The SDK calls invoke(). The trace decorator creates the agent span, and the entrypoint validates the input.',file:'agentcore/entrypoint.py · invoke(payload, context)',input:'The goal JSON and session/request context from the SDK.',output:'Runtime metadata, followed by events from the shared loop.',why:'This is the adaptation layer between the AgentCore HTTP/SSE contract and your existing generator-based agent.',code:'@app.entrypoint\n@trace_invocation\ndef invoke(payload, context):\n  loop, provider, instance_id = prepare()\n  yield runtime_metadata\n  for event in trace_events(loop.run(goal, provider)):\n    yield redact(event)'},
+ {place:'Inside the runtime',title:'Initialize once per environment.',description:'prepare() retrieves tool credentials before backend configuration is imported, then caches the loop and provider.',file:'agentcore/bootstrap.py · prepare()',input:'TRIP_SECRET_ARN, the AWS region, and runtime IAM permissions.',output:'The loop module, a BedrockProvider, and a process marker.',why:'Only the three approved travel keys are loaded into the environment. Later requests in that process reuse initialization. Secret values are not baked into the image.',code:'if cached_runtime is None:\n  secret = secretsmanager.get_secret_value(...)\n  load_approved_travel_keys(secret)\n  import loop\n  provider = BedrockProvider()\nreturn loop, provider, instance_id'},
+ {place:'Inside the runtime',title:'Start the planning transcript.',description:'The existing agent loop starts with its system instructions and this request’s goal.',file:'backend/loop.py · run(goal, provider)',input:'The user goal and the Bedrock provider.',output:'A fresh history, a start event, and the first model call.',why:'Session reuse does not preserve chat history here. Each invocation creates its own transcript and can run up to MAX_TURNS.',code:"history = [\n  {'role': 'system', 'content': SYSTEM},\n  {'role': 'user', 'content': goal}\n]\ndecision = provider.reason(history, registry.specs())"},
+ {place:'Runtime → Amazon Bedrock',title:'Ask the model what to do.',description:'The provider converts the neutral transcript and tool schemas into a Bedrock Converse request.',file:'agentcore/bedrock_provider.py · reason(history, tools)',input:'Current history and JSON schemas describing available tools.',output:'A Decision containing either a ToolCall or a final answer, plus token usage.',why:'Bedrock chooses the next action. It returns the tool name and arguments; your Python code executes that tool.',code:"response = client.converse(\n  modelId='us.amazon.nova-2-lite-v1:0',\n  messages=messages,\n  system=system,\n  toolConfig=tool_schemas\n)\n# Convert response → Decision / ToolCall"},
+ {place:'Runtime → travel API',title:'Validate and execute the tool.',description:'The registry checks the model’s arguments against the tool schema and invokes the registered Python function.',file:'backend/tools/registry.py · call(name, args)',input:'The tool name and arguments returned by Bedrock.',output:'A tool result, such as coordinates, weather, or places.',why:'Tool functions run inside the AgentCore environment and make the actual external API requests. telemetry.py measures execution as an execute_tool span.',code:"validate(args, TOOLS[name]['spec']['parameters'])\nresult = TOOLS[name]['fn'](**args)\n# Example: geocode_place → Geoapify API"},
+ {place:'Inside the runtime',title:'Let the model read the result.',description:'The loop appends the tool result or error to history and emits a tool_result event.',file:'backend/loop.py · tool-result handling',input:'Tool response data, or a recoverable tool error.',output:'Updated history for the next provider.reason() call.',why:'This closes the feedback loop: the next decision can use the result, try another argument, select another tool, or finish. Repeat step 08.',code:"history.append({\n  'role': 'tool',\n  'id': tool_call.id,\n  'content': json.dumps(result)[:4000]\n})\n# Go back to provider.reason(history, tools)"},
+ {place:'Inside the runtime',title:'Finish the plan.',description:'When the model returns no tool request, the loop yields the final answer and exits.',file:'backend/loop.py → agentcore/entrypoint.py',input:'A model Decision with final text instead of a ToolCall.',output:'A final SSE event. The wrapper records completion and flushes the agent trace.',why:'The model decides when it has enough information. The loop also has a turn limit, so tool calls cannot continue indefinitely.',code:"if not decision.tool_call:\n  yield {'type': 'final', 'text': decision.final}\n  return"},
+ {place:'AWS → your browser',title:'Render the streamed response.',description:'The client parses streamed JSON events, the local bridge forwards them, and the browser adds each event to the page.',file:'client.py → serve.py → ui.html · showEvent()',input:'runtime, start, reason, tool_result, final, or error events.',output:'Visible progress, tool results, the final plan, and the latest trace ID.',why:'Streaming starts during execution, not only after the final answer. A trace ID connects this request to its CloudWatch execution timeline.',code:"AgentCore SSE response\n  → client.invoke_events()\n    → serve.py StreamingResponse\n      → ui.html showEvent(event)"}
+];
+const $ = id => document.getElementById(id);
+const nodes = Array.from(document.querySelectorAll('[data-step]'));
+let selected = 0;
+function selectStep(index){
+ if(!Number.isInteger(index)||index<0||index>=steps.length)return;
+ selected=index;
+ const step=steps[index];
+ nodes.forEach(node=>node.setAttribute('aria-pressed',String(Number(node.dataset.step)===index)));
+ $('step-place').textContent=`Step ${String(index+1).padStart(2,'0')} · ${step.place}`;
+ $('step-title').textContent=step.title;
+ $('step-description').textContent=step.description;
+ $('step-file').replaceChildren(Object.assign(document.createElement('code'),{textContent:step.file}));
+ for(const key of ['input','output','why','code'])$('step-'+key).textContent=step[key];
+ $('previous').disabled=index===0;
+ $('next').disabled=index===steps.length-1;
+ $('progress').textContent=`Step ${index+1} of ${steps.length} · ${nodes[index].querySelector('strong').textContent}`;
+}
+nodes.forEach(node=>node.addEventListener('click',()=>{
+ selectStep(Number(node.dataset.step));
+ if(window.matchMedia('(max-width:760px)').matches)$('step-title').scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth',block:'center'});
+}));
+$('previous').addEventListener('click',()=>selectStep(selected-1));
+$('next').addEventListener('click',()=>selectStep(selected+1));
+if(location.protocol!=='file:')$('demo-link').href='/';
+selectStep(0);
+</script>
+</body>
+</html>

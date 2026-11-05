@@ -1,0 +1,8 @@
+bedrock-agentcore==1.25.3
+boto3[crt]==1.43.123
+fastapi==0.162.0
+uvicorn==0.54.0
+requests==2.34.2
+jsonschema==4.26.0
+python-dotenv==1.2.4
+aws-opentelemetry-distro==0.22.0

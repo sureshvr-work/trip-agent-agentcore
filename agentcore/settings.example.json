@@ -1,0 +1,11 @@
+{
+  "region": "us-east-2",
+  "account_id": "123456789012",
+  "runtime_name": "trip_agent_bedrock_demo",
+  "repository": "trip-agent-agentcore",
+  "role_name": "trip-agent-agentcore-runtime-role",
+  "model_id": "us.amazon.nova-2-lite-v1:0",
+  "secret_arn": "arn:aws:secretsmanager:us-east-2:123456789012:secret:trip-agent/demo-EXAMPLE",
+  "idle_timeout_seconds": 300,
+  "max_session_seconds": 1800
+}
